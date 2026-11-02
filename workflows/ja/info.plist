@@ -8,22 +8,22 @@
 	<string>Productivity</string>
 	<key>connections</key>
 	<dict>
-		<key>AEFD6188-3ABC-4D34-A4BF-8C8E973C22AD</key>
+		<key>D6F3215C-7A43-4F68-B8B7-82D860375D6E</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>6886EEBA-A119-42EB-81BA-09359B87CBE2</string>
+				<string>FFBC955F-B6CB-40A0-B478-B659069A8BCE</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
 				<string></string>
 			</dict>
 		</array>
-		<key>E26C2A18-0C79-4F19-90F6-01B73BC560B8</key>
+		<key>FFBC955F-B6CB-40A0-B478-B659069A8BCE</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>AEFD6188-3ABC-4D34-A4BF-8C8E973C22AD</string>
+				<string>CA184CA3-DD04-4ADA-B4A3-FFF59AEA17CC</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -65,6 +65,7 @@ TABRELAY_MODE=--list
 #   --lang ja|en : 表示言語（環境変数 TABRELAY_LANG でも指定可、既定 ja）
 #   モードは環境変数 TABRELAY_MODE でも指定可（公開パッケージの埋め込み用）
 #   選択した項目は payload（base64url の browser.title.url）として TABRELAY_PAYLOAD で受け取る
+#   TABRELAY_AUTO_PASTE=1 で Quick Chat への貼り付けまで代行する（既定 0 = 手動ペースト）
 set -u
 
 mode="${TABRELAY_MODE:---send}"
@@ -87,12 +88,14 @@ if [[ "$lang" == "en" ]]; then
   L_PROMPT_HEAD="Please take a look at this page."
   L_TITLE="Title"
   L_COPIED="Copied. Paste into Muse to send"
+  L_PASTED="Tried to paste into Quick Chat - please check before sending"
 else
   L_NOTAB="対応ブラウザのタブが取得できませんでした"
   L_NOTAB_SUB="Brave / Chrome / Chromium でページを開いてから実行してください"
   L_PROMPT_HEAD="このページを見てください。"
   L_TITLE="タイトル"
   L_COPIED="コピーしました。貼り付けて送信してください"
+  L_PASTED="Quick Chat へ貼り付けを試みました。確認してから送信してください"
 fi
 
 US=$(printf '\037')
@@ -218,7 +221,13 @@ if [[ -z "$title" ]]; then title="$url"; fi
 # Muse Quick Chat（Option+Space）を開く。アクセシビリティ許可が無い場合は静かに失敗する
 # Open Muse Quick Chat (Option+Space). Fails silently without the Accessibility permission.
 osascript -e 'tell application "System Events" to keystroke " " using {option down}' &gt;/dev/null 2&gt;&amp;1 || true
-echo "$L_COPIED: $title"
+if [[ "${TABRELAY_AUTO_PASTE:-0}" == "1" ]]; then
+  sleep 0.9
+  osascript -e 'tell application "System Events" to keystroke "v" using {command down}' &gt;/dev/null 2&gt;&amp;1 || true
+  echo "$L_PASTED: $title"
+else
+  echo "$L_COPIED: $title"
+fi
 </string>
 				<key>subtext</key>
 				<string>開いている対応ブラウザのタブを Muse へ渡す</string>
@@ -232,7 +241,7 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.input.scriptfilter</string>
 			<key>uid</key>
-			<string>E26C2A18-0C79-4F19-90F6-01B73BC560B8</string>
+			<string>D6F3215C-7A43-4F68-B8B7-82D860375D6E</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -257,6 +266,7 @@ TABRELAY_PAYLOAD="{query}"
 #   --lang ja|en : 表示言語（環境変数 TABRELAY_LANG でも指定可、既定 ja）
 #   モードは環境変数 TABRELAY_MODE でも指定可（公開パッケージの埋め込み用）
 #   選択した項目は payload（base64url の browser.title.url）として TABRELAY_PAYLOAD で受け取る
+#   TABRELAY_AUTO_PASTE=1 で Quick Chat への貼り付けまで代行する（既定 0 = 手動ペースト）
 set -u
 
 mode="${TABRELAY_MODE:---send}"
@@ -279,12 +289,14 @@ if [[ "$lang" == "en" ]]; then
   L_PROMPT_HEAD="Please take a look at this page."
   L_TITLE="Title"
   L_COPIED="Copied. Paste into Muse to send"
+  L_PASTED="Tried to paste into Quick Chat - please check before sending"
 else
   L_NOTAB="対応ブラウザのタブが取得できませんでした"
   L_NOTAB_SUB="Brave / Chrome / Chromium でページを開いてから実行してください"
   L_PROMPT_HEAD="このページを見てください。"
   L_TITLE="タイトル"
   L_COPIED="コピーしました。貼り付けて送信してください"
+  L_PASTED="Quick Chat へ貼り付けを試みました。確認してから送信してください"
 fi
 
 US=$(printf '\037')
@@ -410,7 +422,13 @@ if [[ -z "$title" ]]; then title="$url"; fi
 # Muse Quick Chat（Option+Space）を開く。アクセシビリティ許可が無い場合は静かに失敗する
 # Open Muse Quick Chat (Option+Space). Fails silently without the Accessibility permission.
 osascript -e 'tell application "System Events" to keystroke " " using {option down}' &gt;/dev/null 2&gt;&amp;1 || true
-echo "$L_COPIED: $title"
+if [[ "${TABRELAY_AUTO_PASTE:-0}" == "1" ]]; then
+  sleep 0.9
+  osascript -e 'tell application "System Events" to keystroke "v" using {command down}' &gt;/dev/null 2&gt;&amp;1 || true
+  echo "$L_PASTED: $title"
+else
+  echo "$L_COPIED: $title"
+fi
 </string>
 				<key>scriptargtype</key>
 				<string>0</string>
@@ -422,7 +440,7 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.action.script</string>
 			<key>uid</key>
-			<string>AEFD6188-3ABC-4D34-A4BF-8C8E973C22AD</string>
+			<string>FFBC955F-B6CB-40A0-B478-B659069A8BCE</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -437,30 +455,35 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.output.notification</string>
 			<key>uid</key>
-			<string>6886EEBA-A119-42EB-81BA-09359B87CBE2</string>
+			<string>CA184CA3-DD04-4ADA-B4A3-FFF59AEA17CC</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
 	</array>
 	<key>uidata</key>
 	<dict>
-		<key>6886EEBA-A119-42EB-81BA-09359B87CBE2</key>
+		<key>CA184CA3-DD04-4ADA-B4A3-FFF59AEA17CC</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
-		<key>AEFD6188-3ABC-4D34-A4BF-8C8E973C22AD</key>
+		<key>D6F3215C-7A43-4F68-B8B7-82D860375D6E</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
-		<key>E26C2A18-0C79-4F19-90F6-01B73BC560B8</key>
+		<key>FFBC955F-B6CB-40A0-B478-B659069A8BCE</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
 	</dict>
+	<key>variables</key>
+	<dict>
+		<key>TABRELAY_AUTO_PASTE</key>
+		<string>0</string>
+	</dict>
 	<key>version</key>
-	<string>0.2.1</string>
+	<string>0.2.2</string>
 </dict>
 </plist>

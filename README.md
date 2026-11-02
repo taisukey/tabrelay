@@ -48,6 +48,10 @@ A (spark) is the default. All three icons are bundled in the package. To switch:
 - Puts plain text on **your clipboard**. Nothing is uploaded anywhere, and nothing is sent to Muse automatically — you paste and send it yourself.
 - It does **not** extract the article body. If you need full-text clipping, a tool such as Obsidian Web Clipper is the better fit; this workflow is the lightweight "take a look at this page" path.
 
+## Auto-paste (optional)
+
+By default, TabRelay copies the prompt and opens Quick Chat; you paste with ⌘V and send. If you would rather have it paste for you, set the workflow variable `TABRELAY_AUTO_PASTE` to `1`: in Alfred Preferences, select the TabRelay workflow, open its variables (the [x] button at the top right), and change the value. Auto-paste simulates ⌘V after opening Quick Chat, so it needs Alfred's Accessibility permission and Muse's Quick Chat shortcut (Option+Space) enabled. The paste cannot be verified, so in this mode the notification asks you to check Quick Chat before sending.
+
 ## How it works
 
 A small zsh script (`src/tabrelay`) talks to each supported browser via AppleScript. In the distributed workflows the script is embedded directly into the workflow, so there are no other files to install. Run `./build.py` to regenerate the packages in `dist/` from `src/`.

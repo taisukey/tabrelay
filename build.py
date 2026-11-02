@@ -35,8 +35,9 @@ def make_workflow(lang, name, bundleid, description, f_title, f_sub, f_run, out_
         "createdby": "taisukey",
         "description": description,
         "disabled": False,
+        "variables": {"TABRELAY_AUTO_PASTE": "0"},
         "name": name,
-        "version": "0.2.1",
+        "version": "0.2.2",
         "objects": [
             {"type": "alfred.workflow.input.scriptfilter", "uid": sf, "version": 1,
              "config": {"script": inline(lang, "--list"), "keyword": "mc",
