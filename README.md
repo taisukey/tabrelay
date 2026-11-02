@@ -1,5 +1,7 @@
 # TabRelay — an Alfred workflow
 
+<p align="center"><img src="assets/icon.png" width="120" alt="TabRelay icon"></p>
+
 **Hand the page you're reading to your Muse agent.**
 
 Pass the page you are reading in **Brave** to **Muse** (the Mac app) in two keystrokes.
@@ -16,6 +18,12 @@ A Japanese version is included as `TabRelay-JA.alfredworkflow`; the English one 
 - Alfred 4 or 5 with the Powerpack (required for workflows)
 - Brave Browser
 - Muse for Mac, with Quick Chat on its default shortcut (Option+Space)
+
+## Preview
+
+![TabRelay in Alfred](assets/preview-alfred.png)
+
+Type `mc` in Alfred and the current Brave tab (title + URL) is ready to pass to Muse.
 
 ## Install
 

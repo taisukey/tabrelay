@@ -1,5 +1,7 @@
 # TabRelay — Alfred ワークフロー
 
+<p align="center"><img src="assets/icon.png" width="120" alt="TabRelay アイコン"></p>
+
 **Brave** で読んでいるページを、Mac の **Muse** アプリへ2ストロークで渡すワークフローです。
 
 Alfred で `mc` と入力すると、現在の Brave タブが候補に出ます。Enter を押すと、ページのタイトルと URL を入れた依頼文がクリップボードにコピーされ、Muse の Quick Chat が開きます。あとは ⌘V で貼って送信するだけです。
@@ -14,6 +16,12 @@ English: [README.md](README.md)
 - Alfred 4 または 5（ワークフローには Powerpack が必要です）
 - Brave Browser
 - Muse for Mac（Quick Chat のショートカットが既定の Option+Space のままであること）
+
+## プレビュー
+
+![Alfred 上の TabRelay](assets/preview-alfred.png)
+
+Alfred で `mc` と打つと、Brave の現在のタブ（タイトルと URL）が Muse へ渡せる状態で並びます。
 
 ## インストール
 
