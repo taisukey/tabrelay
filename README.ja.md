@@ -66,6 +66,12 @@ Alfred で `mc` と打つと、起動中の対応ブラウザの現在のタブ�
 
 小さな zsh スクリプト（`src/tabrelay`）が AppleScript 経由で対応ブラウザとやり取りします。配布用ワークフローにはスクリプトを埋め込んであるので、他にインストールするファイルはありません。`./build.py` を実行すると `src/` から `dist/` のパッケージを再生成できます。
 
+## リンク
+
+- [Alfred](https://www.alfredapp.com/workflows/) — このワークフローの実行環境
+- [Alfred ヘルプ：ワークフローの変数](https://www.alfredapp.com/help/workflows/advanced/variables/) — `TABRELAY_AUTO_PASTE` のようなワークフロー変数の解説（英語）
+- [Awesome Alfred Workflows](https://github.com/alfred-workflows/awesome-alfred-workflows) — Alfred ワークフローのキュレーションリスト（英語）
+
 ## ライセンス
 
 MIT — [LICENSE](LICENSE) をご覧ください。

@@ -68,6 +68,12 @@ Auto-paste simulates ⌘V after opening Quick Chat, so it needs Alfred's Accessi
 
 A small zsh script (`src/tabrelay`) talks to each supported browser via AppleScript. In the distributed workflows the script is embedded directly into the workflow, so there are no other files to install. Run `./build.py` to regenerate the packages in `dist/` from `src/`.
 
+## Links
+
+- [Alfred](https://www.alfredapp.com/workflows/) — the launcher this workflow runs on
+- [Alfred Help: Using Variables in Workflows](https://www.alfredapp.com/help/workflows/advanced/variables/) — background on workflow variables such as `TABRELAY_AUTO_PASTE`
+- [Awesome Alfred Workflows](https://github.com/alfred-workflows/awesome-alfred-workflows) — a curated list of Alfred workflows
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
