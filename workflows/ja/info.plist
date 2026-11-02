@@ -8,22 +8,22 @@
 	<string>Productivity</string>
 	<key>connections</key>
 	<dict>
-		<key>E45D2CAC-FA8F-4F25-84F9-DE669387B6D9</key>
+		<key>9AE23668-F0AF-4C8F-9933-43D77ED262CC</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>F5E3651B-8C0B-4537-97FA-4912D952F6AD</string>
+				<string>A1E32AA2-CD28-4FBD-97D7-30A53ED8709F</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
 				<string></string>
 			</dict>
 		</array>
-		<key>F5E3651B-8C0B-4537-97FA-4912D952F6AD</key>
+		<key>A1E32AA2-CD28-4FBD-97D7-30A53ED8709F</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>AC5FF136-F6FC-4AE9-A8CF-10C0F14A94AF</string>
+				<string>39FC9C70-8C7D-4F0D-BD49-09DBC9AF1B37</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -34,7 +34,7 @@
 	<key>createdby</key>
 	<string>taisukey</string>
 	<key>description</key>
-	<string>Brave の現在のタブ（タイトルとURL）を Muse へ渡す</string>
+	<string>対応ブラウザ（Brave / Chrome / Chromium）の現在のタブを Muse へ渡す</string>
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
@@ -51,70 +51,164 @@
 				<key>keyword</key>
 				<string>mc</string>
 				<key>runningsubtext</key>
-				<string>Brave を確認中…</string>
+				<string>ブラウザを確認中…</string>
 				<key>script</key>
 				<string>TABRELAY_LANG=ja
 TABRELAY_MODE=--list
-# tabrelay — Brave の現在のタブ（タイトル / URL）を Muse へ渡す
-#              Pass the current Brave tab (title / URL) to Muse.
+# tabrelay — 対応ブラウザ（Brave / Chrome / Chromium）の現在のタブ（タイトル / URL）を Muse へ渡す
+#              Pass the current tab (title / URL) of a supported browser to Muse.
 # Copyright (c) 2026 taisukey. MIT License.
 #
-#   --list : Alfred Script Filter 用。副作用なし / for Alfred Script Filter, no side effects
+#   --list : Alfred Script Filter 用。起動中の対応ブラウザのタブを一覧化する（副作用なし）
+#            for Alfred Script Filter: list the active tab of each running supported browser
 #   --send : 依頼文をコピーして Quick Chat を開く / copy the prompt and open Quick Chat
 #   --lang ja|en : 表示言語（環境変数 TABRELAY_LANG でも指定可、既定 ja）
 #   モードは環境変数 TABRELAY_MODE でも指定可（公開パッケージの埋め込み用）
+#   選択した項目は payload（base64url の browser.title.url）として TABRELAY_PAYLOAD で受け取る
 set -u
 
 mode="${TABRELAY_MODE:---send}"
 lang="${TABRELAY_LANG:-ja}"
+payload="${TABRELAY_PAYLOAD:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --list) mode="--list" ;;
     --send) mode="--send" ;;
     --lang) shift; lang="${1:-ja}" ;;
+    --payload) shift; payload="${1:-}" ;;
+    *) if [[ -z "$payload" ]]; then payload="$1"; fi ;;
   esac
   shift
 done
 
 if [[ "$lang" == "en" ]]; then
-  L_NOTAB="No Brave tab found"
-  L_NOTAB_SUB="Open a page in Brave, then try again"
+  L_NOTAB="No tab found in Brave, Chrome or Chromium"
+  L_NOTAB_SUB="Open a page in a supported browser, then try again"
   L_PROMPT_HEAD="Please take a look at this page."
   L_TITLE="Title"
   L_COPIED="Copied. Paste into Muse to send"
 else
-  L_NOTAB="Brave のタブが取得できませんでした"
-  L_NOTAB_SUB="Brave でページを開いてから実行してください"
+  L_NOTAB="対応ブラウザのタブが取得できませんでした"
+  L_NOTAB_SUB="Brave / Chrome / Chromium でページを開いてから実行してください"
   L_PROMPT_HEAD="このページを見てください。"
   L_TITLE="タイトル"
   L_COPIED="コピーしました。貼り付けて送信してください"
 fi
 
-get_title() { osascript -e 'tell application "Brave Browser" to get title of active tab of front window' 2&gt;/dev/null; }
-get_url()   { osascript -e 'tell application "Brave Browser" to get URL of active tab of front window' 2&gt;/dev/null; }
-json_escape() { python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))'; }
+US=$(printf '\037')
+BROWSERS=("Brave Browser" "Google Chrome" "Chromium")
 
-title=$(get_title)
-url=$(get_url)
+# 起動中のブラウザだけを AppleScript で引く（未起動のアプリは起動させない）
+# Query a browser only when it is already running; never launch it.
+get_tab() {
+  local app="$1" out
+  out=$(osascript \
+    -e "if not (application \"$app\" is running) then return \"\"" \
+    -e "tell application \"$app\"" \
+    -e "if (count of windows) is 0 then return \"\"" \
+    -e "set t to title of active tab of front window" \
+    -e "set u to URL of active tab of front window" \
+    -e "return t &amp; (ASCII character 31) &amp; u" \
+    -e "end tell" 2&gt;/dev/null | tr '\n\r\t' '   ') || out=""
+  printf '%s' "$out"
+}
+
+trim() { local s="$1"; while [[ "$s" == *" " ]]; do s="${s% }"; done; printf '%s' "$s"; }
+
+json_escape() {
+  local s="$1"
+  s=${s//\\/\\\\}
+  s=${s//\"/\\\"}
+  printf '"%s"' "$s"
+}
+
+b64e() { printf '%s' "$1" | base64 | tr -d '\n' | tr '+/' '-_' | tr -d '='; }
+b64d() {
+  local s pad
+  s=$(printf '%s' "$1" | tr '_-' '/+')
+  pad=$(( (4 - ${#s} % 4) % 4 ))
+  if [[ $pad -gt 0 ]]; then
+    s="$s$(printf '=%.0s' $(seq 1 $pad))"
+  fi
+  printf '%s' "$s" | base64 -D 2&gt;/dev/null || printf '%s' "$s" | base64 -d 2&gt;/dev/null
+}
+
+make_payload() { printf '%s.%s.%s' "$(b64e "$1")" "$(b64e "$2")" "$(b64e "$3")"; }
+
+valid_url() {
+  case "$1" in
+    *://*|about:*|chrome:*|brave:*|file:*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 if [[ "$mode" == "--list" ]]; then
-  if [[ -z "$url" ]]; then
-    nt=$(printf '%s' "$L_NOTAB" | json_escape)
-    ns=$(printf '%s' "$L_NOTAB_SUB" | json_escape)
-    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' "$nt" "$ns"
+  items=""
+  for app in "${BROWSERS[@]}"; do
+    out=$(get_tab "$app")
+    [[ "$out" == *"$US"* ]] || continue
+    title=$(trim "${out%%"$US"*}")
+    url=$(trim "${out##*"$US"}")
+    [[ -n "$url" ]] || continue
+    if [[ -z "$title" ]]; then title="$url"; fi
+    p=$(make_payload "$app" "$title" "$url")
+    item=$(printf '{"title":%s,"subtitle":%s,"arg":%s,"valid":true,"variables":{"TABRELAY_BROWSER":%s,"TABRELAY_TITLE":%s,"TABRELAY_URL":%s}}' \
+      "$(json_escape "$title")" \
+      "$(json_escape "$app — $url")" \
+      "$(json_escape "$p")" \
+      "$(json_escape "$app")" \
+      "$(json_escape "$title")" \
+      "$(json_escape "$url")")
+    if [[ -n "$items" ]]; then items="$items,$item"; else items="$item"; fi
+  done
+  if [[ -z "$items" ]]; then
+    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' \
+      "$(json_escape "$L_NOTAB")" "$(json_escape "$L_NOTAB_SUB")"
     exit 0
   fi
-  t=$(printf '%s' "$title" | json_escape)
-  u=$(printf '%s' "$url" | json_escape)
-  printf '{"items":[{"title":%s,"subtitle":%s,"arg":%s,"valid":true}]}\n' "$t" "$u" "$u"
+  printf '{"items":[%s]}\n' "$items"
   exit 0
 fi
 
-# --send
+# --send: 選択された項目の payload を最優先し、無ければ変数、最後に実タブを取り直す
+title=""
+url=""
+browser=""
+if [[ -n "$payload" &amp;&amp; "$payload" == *.*.* ]]; then
+  pb="${payload%%.*}"
+  rest="${payload#*.}"
+  pt="${rest%%.*}"
+  pu="${rest#*.}"
+  d_title=$(b64d "$pt")
+  d_url=$(b64d "$pu")
+  if valid_url "$d_url"; then
+    browser=$(b64d "$pb")
+    title="$d_title"
+    url="$d_url"
+  fi
+fi
+if [[ -z "$url" &amp;&amp; -n "${TABRELAY_URL:-}" ]] &amp;&amp; valid_url "${TABRELAY_URL:-}"; then
+  browser="${TABRELAY_BROWSER:-}"
+  title="${TABRELAY_TITLE:-}"
+  url="${TABRELAY_URL:-}"
+fi
+if [[ -z "$url" ]]; then
+  for app in "${BROWSERS[@]}"; do
+    out=$(get_tab "$app")
+    [[ "$out" == *"$US"* ]] || continue
+    t=$(trim "${out%%"$US"*}")
+    u=$(trim "${out##*"$US"}")
+    if [[ -n "$u" ]]; then
+      browser="$app"; title="$t"; url="$u"
+      break
+    fi
+  done
+fi
 if [[ -z "$url" ]]; then
   echo "$L_NOTAB"
   exit 1
 fi
+if [[ -z "$title" ]]; then title="$url"; fi
 {
   echo "$L_PROMPT_HEAD"
   echo
@@ -127,7 +221,7 @@ osascript -e 'tell application "System Events" to keystroke " " using {option do
 echo "$L_COPIED: $title"
 </string>
 				<key>subtext</key>
-				<string>Brave の現在のタブを Muse へ渡す</string>
+				<string>開いている対応ブラウザのタブを Muse へ渡す</string>
 				<key>title</key>
 				<string>Muse へ渡す</string>
 				<key>type</key>
@@ -138,7 +232,7 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.input.scriptfilter</string>
 			<key>uid</key>
-			<string>E45D2CAC-FA8F-4F25-84F9-DE669387B6D9</string>
+			<string>9AE23668-F0AF-4C8F-9933-43D77ED262CC</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -152,66 +246,161 @@ echo "$L_COPIED: $title"
 				<key>script</key>
 				<string>TABRELAY_LANG=ja
 TABRELAY_MODE=--send
-# tabrelay — Brave の現在のタブ（タイトル / URL）を Muse へ渡す
-#              Pass the current Brave tab (title / URL) to Muse.
+TABRELAY_PAYLOAD="{query}"
+# tabrelay — 対応ブラウザ（Brave / Chrome / Chromium）の現在のタブ（タイトル / URL）を Muse へ渡す
+#              Pass the current tab (title / URL) of a supported browser to Muse.
 # Copyright (c) 2026 taisukey. MIT License.
 #
-#   --list : Alfred Script Filter 用。副作用なし / for Alfred Script Filter, no side effects
+#   --list : Alfred Script Filter 用。起動中の対応ブラウザのタブを一覧化する（副作用なし）
+#            for Alfred Script Filter: list the active tab of each running supported browser
 #   --send : 依頼文をコピーして Quick Chat を開く / copy the prompt and open Quick Chat
 #   --lang ja|en : 表示言語（環境変数 TABRELAY_LANG でも指定可、既定 ja）
 #   モードは環境変数 TABRELAY_MODE でも指定可（公開パッケージの埋め込み用）
+#   選択した項目は payload（base64url の browser.title.url）として TABRELAY_PAYLOAD で受け取る
 set -u
 
 mode="${TABRELAY_MODE:---send}"
 lang="${TABRELAY_LANG:-ja}"
+payload="${TABRELAY_PAYLOAD:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --list) mode="--list" ;;
     --send) mode="--send" ;;
     --lang) shift; lang="${1:-ja}" ;;
+    --payload) shift; payload="${1:-}" ;;
+    *) if [[ -z "$payload" ]]; then payload="$1"; fi ;;
   esac
   shift
 done
 
 if [[ "$lang" == "en" ]]; then
-  L_NOTAB="No Brave tab found"
-  L_NOTAB_SUB="Open a page in Brave, then try again"
+  L_NOTAB="No tab found in Brave, Chrome or Chromium"
+  L_NOTAB_SUB="Open a page in a supported browser, then try again"
   L_PROMPT_HEAD="Please take a look at this page."
   L_TITLE="Title"
   L_COPIED="Copied. Paste into Muse to send"
 else
-  L_NOTAB="Brave のタブが取得できませんでした"
-  L_NOTAB_SUB="Brave でページを開いてから実行してください"
+  L_NOTAB="対応ブラウザのタブが取得できませんでした"
+  L_NOTAB_SUB="Brave / Chrome / Chromium でページを開いてから実行してください"
   L_PROMPT_HEAD="このページを見てください。"
   L_TITLE="タイトル"
   L_COPIED="コピーしました。貼り付けて送信してください"
 fi
 
-get_title() { osascript -e 'tell application "Brave Browser" to get title of active tab of front window' 2&gt;/dev/null; }
-get_url()   { osascript -e 'tell application "Brave Browser" to get URL of active tab of front window' 2&gt;/dev/null; }
-json_escape() { python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))'; }
+US=$(printf '\037')
+BROWSERS=("Brave Browser" "Google Chrome" "Chromium")
 
-title=$(get_title)
-url=$(get_url)
+# 起動中のブラウザだけを AppleScript で引く（未起動のアプリは起動させない）
+# Query a browser only when it is already running; never launch it.
+get_tab() {
+  local app="$1" out
+  out=$(osascript \
+    -e "if not (application \"$app\" is running) then return \"\"" \
+    -e "tell application \"$app\"" \
+    -e "if (count of windows) is 0 then return \"\"" \
+    -e "set t to title of active tab of front window" \
+    -e "set u to URL of active tab of front window" \
+    -e "return t &amp; (ASCII character 31) &amp; u" \
+    -e "end tell" 2&gt;/dev/null | tr '\n\r\t' '   ') || out=""
+  printf '%s' "$out"
+}
+
+trim() { local s="$1"; while [[ "$s" == *" " ]]; do s="${s% }"; done; printf '%s' "$s"; }
+
+json_escape() {
+  local s="$1"
+  s=${s//\\/\\\\}
+  s=${s//\"/\\\"}
+  printf '"%s"' "$s"
+}
+
+b64e() { printf '%s' "$1" | base64 | tr -d '\n' | tr '+/' '-_' | tr -d '='; }
+b64d() {
+  local s pad
+  s=$(printf '%s' "$1" | tr '_-' '/+')
+  pad=$(( (4 - ${#s} % 4) % 4 ))
+  if [[ $pad -gt 0 ]]; then
+    s="$s$(printf '=%.0s' $(seq 1 $pad))"
+  fi
+  printf '%s' "$s" | base64 -D 2&gt;/dev/null || printf '%s' "$s" | base64 -d 2&gt;/dev/null
+}
+
+make_payload() { printf '%s.%s.%s' "$(b64e "$1")" "$(b64e "$2")" "$(b64e "$3")"; }
+
+valid_url() {
+  case "$1" in
+    *://*|about:*|chrome:*|brave:*|file:*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 if [[ "$mode" == "--list" ]]; then
-  if [[ -z "$url" ]]; then
-    nt=$(printf '%s' "$L_NOTAB" | json_escape)
-    ns=$(printf '%s' "$L_NOTAB_SUB" | json_escape)
-    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' "$nt" "$ns"
+  items=""
+  for app in "${BROWSERS[@]}"; do
+    out=$(get_tab "$app")
+    [[ "$out" == *"$US"* ]] || continue
+    title=$(trim "${out%%"$US"*}")
+    url=$(trim "${out##*"$US"}")
+    [[ -n "$url" ]] || continue
+    if [[ -z "$title" ]]; then title="$url"; fi
+    p=$(make_payload "$app" "$title" "$url")
+    item=$(printf '{"title":%s,"subtitle":%s,"arg":%s,"valid":true,"variables":{"TABRELAY_BROWSER":%s,"TABRELAY_TITLE":%s,"TABRELAY_URL":%s}}' \
+      "$(json_escape "$title")" \
+      "$(json_escape "$app — $url")" \
+      "$(json_escape "$p")" \
+      "$(json_escape "$app")" \
+      "$(json_escape "$title")" \
+      "$(json_escape "$url")")
+    if [[ -n "$items" ]]; then items="$items,$item"; else items="$item"; fi
+  done
+  if [[ -z "$items" ]]; then
+    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' \
+      "$(json_escape "$L_NOTAB")" "$(json_escape "$L_NOTAB_SUB")"
     exit 0
   fi
-  t=$(printf '%s' "$title" | json_escape)
-  u=$(printf '%s' "$url" | json_escape)
-  printf '{"items":[{"title":%s,"subtitle":%s,"arg":%s,"valid":true}]}\n' "$t" "$u" "$u"
+  printf '{"items":[%s]}\n' "$items"
   exit 0
 fi
 
-# --send
+# --send: 選択された項目の payload を最優先し、無ければ変数、最後に実タブを取り直す
+title=""
+url=""
+browser=""
+if [[ -n "$payload" &amp;&amp; "$payload" == *.*.* ]]; then
+  pb="${payload%%.*}"
+  rest="${payload#*.}"
+  pt="${rest%%.*}"
+  pu="${rest#*.}"
+  d_title=$(b64d "$pt")
+  d_url=$(b64d "$pu")
+  if valid_url "$d_url"; then
+    browser=$(b64d "$pb")
+    title="$d_title"
+    url="$d_url"
+  fi
+fi
+if [[ -z "$url" &amp;&amp; -n "${TABRELAY_URL:-}" ]] &amp;&amp; valid_url "${TABRELAY_URL:-}"; then
+  browser="${TABRELAY_BROWSER:-}"
+  title="${TABRELAY_TITLE:-}"
+  url="${TABRELAY_URL:-}"
+fi
+if [[ -z "$url" ]]; then
+  for app in "${BROWSERS[@]}"; do
+    out=$(get_tab "$app")
+    [[ "$out" == *"$US"* ]] || continue
+    t=$(trim "${out%%"$US"*}")
+    u=$(trim "${out##*"$US"}")
+    if [[ -n "$u" ]]; then
+      browser="$app"; title="$t"; url="$u"
+      break
+    fi
+  done
+fi
 if [[ -z "$url" ]]; then
   echo "$L_NOTAB"
   exit 1
 fi
+if [[ -z "$title" ]]; then title="$url"; fi
 {
   echo "$L_PROMPT_HEAD"
   echo
@@ -233,7 +422,7 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.action.script</string>
 			<key>uid</key>
-			<string>F5E3651B-8C0B-4537-97FA-4912D952F6AD</string>
+			<string>A1E32AA2-CD28-4FBD-97D7-30A53ED8709F</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -248,30 +437,30 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.output.notification</string>
 			<key>uid</key>
-			<string>AC5FF136-F6FC-4AE9-A8CF-10C0F14A94AF</string>
+			<string>39FC9C70-8C7D-4F0D-BD49-09DBC9AF1B37</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
 	</array>
 	<key>uidata</key>
 	<dict>
-		<key>AC5FF136-F6FC-4AE9-A8CF-10C0F14A94AF</key>
+		<key>39FC9C70-8C7D-4F0D-BD49-09DBC9AF1B37</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
-		<key>E45D2CAC-FA8F-4F25-84F9-DE669387B6D9</key>
+		<key>9AE23668-F0AF-4C8F-9933-43D77ED262CC</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
-		<key>F5E3651B-8C0B-4537-97FA-4912D952F6AD</key>
+		<key>A1E32AA2-CD28-4FBD-97D7-30A53ED8709F</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
 	</dict>
 	<key>version</key>
-	<string>0.1.0</string>
+	<string>0.2.0</string>
 </dict>
 </plist>

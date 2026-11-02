@@ -21,7 +21,10 @@ if body.startswith("#!"):
 
 
 def inline(lang, mode):
-    return "TABRELAY_LANG=%s\nTABRELAY_MODE=%s\n%s" % (lang, mode, body)
+    head = "TABRELAY_LANG=%s\nTABRELAY_MODE=%s\n" % (lang, mode)
+    if mode == "--send":
+        head += 'TABRELAY_PAYLOAD="{query}"\n'
+    return head + body
 
 
 def make_workflow(lang, name, bundleid, description, f_title, f_sub, f_run, out_name):
@@ -33,7 +36,7 @@ def make_workflow(lang, name, bundleid, description, f_title, f_sub, f_run, out_
         "description": description,
         "disabled": False,
         "name": name,
-        "version": "0.1.0",
+        "version": "0.2.0",
         "objects": [
             {"type": "alfred.workflow.input.scriptfilter", "uid": sf, "version": 1,
              "config": {"script": inline(lang, "--list"), "keyword": "mc",
@@ -73,11 +76,11 @@ def make_workflow(lang, name, bundleid, description, f_title, f_sub, f_run, out_
 
 make_workflow(
     "ja", "TabRelay", "jp.taisukey.tabrelay.ja",
-    "Brave の現在のタブ（タイトルとURL）を Muse へ渡す",
-    "Muse へ渡す", "Brave の現在のタブを Muse へ渡す", "Brave を確認中…",
+    "対応ブラウザ（Brave / Chrome / Chromium）の現在のタブを Muse へ渡す",
+    "Muse へ渡す", "開いている対応ブラウザのタブを Muse へ渡す", "ブラウザを確認中…",
     "TabRelay-JA.alfredworkflow")
 make_workflow(
     "en", "TabRelay", "jp.taisukey.tabrelay",
-    "Pass the current Brave tab (title and URL) to Muse",
-    "Pass to Muse", "Send the current Brave tab to Muse", "Checking Brave…",
+    "Pass the current tab of a supported browser (Brave, Chrome, Chromium) to Muse",
+    "Pass to Muse", "Send a tab from Brave, Chrome or Chromium to Muse", "Checking browsers…",
     "TabRelay-EN.alfredworkflow")

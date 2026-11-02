@@ -1,64 +1,158 @@
 #!/bin/zsh
-# tabrelay — Brave の現在のタブ（タイトル / URL）を Muse へ渡す
-#              Pass the current Brave tab (title / URL) to Muse.
+# tabrelay — 対応ブラウザ（Brave / Chrome / Chromium）の現在のタブ（タイトル / URL）を Muse へ渡す
+#              Pass the current tab (title / URL) of a supported browser to Muse.
 # Copyright (c) 2026 taisukey. MIT License.
 #
-#   --list : Alfred Script Filter 用。副作用なし / for Alfred Script Filter, no side effects
+#   --list : Alfred Script Filter 用。起動中の対応ブラウザのタブを一覧化する（副作用なし）
+#            for Alfred Script Filter: list the active tab of each running supported browser
 #   --send : 依頼文をコピーして Quick Chat を開く / copy the prompt and open Quick Chat
 #   --lang ja|en : 表示言語（環境変数 TABRELAY_LANG でも指定可、既定 ja）
 #   モードは環境変数 TABRELAY_MODE でも指定可（公開パッケージの埋め込み用）
+#   選択した項目は payload（base64url の browser.title.url）として TABRELAY_PAYLOAD で受け取る
 set -u
 
 mode="${TABRELAY_MODE:---send}"
 lang="${TABRELAY_LANG:-ja}"
+payload="${TABRELAY_PAYLOAD:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --list) mode="--list" ;;
     --send) mode="--send" ;;
     --lang) shift; lang="${1:-ja}" ;;
+    --payload) shift; payload="${1:-}" ;;
+    *) if [[ -z "$payload" ]]; then payload="$1"; fi ;;
   esac
   shift
 done
 
 if [[ "$lang" == "en" ]]; then
-  L_NOTAB="No Brave tab found"
-  L_NOTAB_SUB="Open a page in Brave, then try again"
+  L_NOTAB="No tab found in Brave, Chrome or Chromium"
+  L_NOTAB_SUB="Open a page in a supported browser, then try again"
   L_PROMPT_HEAD="Please take a look at this page."
   L_TITLE="Title"
   L_COPIED="Copied. Paste into Muse to send"
 else
-  L_NOTAB="Brave のタブが取得できませんでした"
-  L_NOTAB_SUB="Brave でページを開いてから実行してください"
+  L_NOTAB="対応ブラウザのタブが取得できませんでした"
+  L_NOTAB_SUB="Brave / Chrome / Chromium でページを開いてから実行してください"
   L_PROMPT_HEAD="このページを見てください。"
   L_TITLE="タイトル"
   L_COPIED="コピーしました。貼り付けて送信してください"
 fi
 
-get_title() { osascript -e 'tell application "Brave Browser" to get title of active tab of front window' 2>/dev/null; }
-get_url()   { osascript -e 'tell application "Brave Browser" to get URL of active tab of front window' 2>/dev/null; }
-json_escape() { python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))'; }
+US=$(printf '\037')
+BROWSERS=("Brave Browser" "Google Chrome" "Chromium")
 
-title=$(get_title)
-url=$(get_url)
+# 起動中のブラウザだけを AppleScript で引く（未起動のアプリは起動させない）
+# Query a browser only when it is already running; never launch it.
+get_tab() {
+  local app="$1" out
+  out=$(osascript \
+    -e "if not (application \"$app\" is running) then return \"\"" \
+    -e "tell application \"$app\"" \
+    -e "if (count of windows) is 0 then return \"\"" \
+    -e "set t to title of active tab of front window" \
+    -e "set u to URL of active tab of front window" \
+    -e "return t & (ASCII character 31) & u" \
+    -e "end tell" 2>/dev/null | tr '\n\r\t' '   ') || out=""
+  printf '%s' "$out"
+}
+
+trim() { local s="$1"; while [[ "$s" == *" " ]]; do s="${s% }"; done; printf '%s' "$s"; }
+
+json_escape() {
+  local s="$1"
+  s=${s//\\/\\\\}
+  s=${s//\"/\\\"}
+  printf '"%s"' "$s"
+}
+
+b64e() { printf '%s' "$1" | base64 | tr -d '\n' | tr '+/' '-_' | tr -d '='; }
+b64d() {
+  local s pad
+  s=$(printf '%s' "$1" | tr '_-' '/+')
+  pad=$(( (4 - ${#s} % 4) % 4 ))
+  if [[ $pad -gt 0 ]]; then
+    s="$s$(printf '=%.0s' $(seq 1 $pad))"
+  fi
+  printf '%s' "$s" | base64 -D 2>/dev/null || printf '%s' "$s" | base64 -d 2>/dev/null
+}
+
+make_payload() { printf '%s.%s.%s' "$(b64e "$1")" "$(b64e "$2")" "$(b64e "$3")"; }
+
+valid_url() {
+  case "$1" in
+    *://*|about:*|chrome:*|brave:*|file:*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 if [[ "$mode" == "--list" ]]; then
-  if [[ -z "$url" ]]; then
-    nt=$(printf '%s' "$L_NOTAB" | json_escape)
-    ns=$(printf '%s' "$L_NOTAB_SUB" | json_escape)
-    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' "$nt" "$ns"
+  items=""
+  for app in "${BROWSERS[@]}"; do
+    out=$(get_tab "$app")
+    [[ "$out" == *"$US"* ]] || continue
+    title=$(trim "${out%%"$US"*}")
+    url=$(trim "${out##*"$US"}")
+    [[ -n "$url" ]] || continue
+    if [[ -z "$title" ]]; then title="$url"; fi
+    p=$(make_payload "$app" "$title" "$url")
+    item=$(printf '{"title":%s,"subtitle":%s,"arg":%s,"valid":true,"variables":{"TABRELAY_BROWSER":%s,"TABRELAY_TITLE":%s,"TABRELAY_URL":%s}}' \
+      "$(json_escape "$title")" \
+      "$(json_escape "$app — $url")" \
+      "$(json_escape "$p")" \
+      "$(json_escape "$app")" \
+      "$(json_escape "$title")" \
+      "$(json_escape "$url")")
+    if [[ -n "$items" ]]; then items="$items,$item"; else items="$item"; fi
+  done
+  if [[ -z "$items" ]]; then
+    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' \
+      "$(json_escape "$L_NOTAB")" "$(json_escape "$L_NOTAB_SUB")"
     exit 0
   fi
-  t=$(printf '%s' "$title" | json_escape)
-  u=$(printf '%s' "$url" | json_escape)
-  printf '{"items":[{"title":%s,"subtitle":%s,"arg":%s,"valid":true}]}\n' "$t" "$u" "$u"
+  printf '{"items":[%s]}\n' "$items"
   exit 0
 fi
 
-# --send
+# --send: 選択された項目の payload を最優先し、無ければ変数、最後に実タブを取り直す
+title=""
+url=""
+browser=""
+if [[ -n "$payload" && "$payload" == *.*.* ]]; then
+  pb="${payload%%.*}"
+  rest="${payload#*.}"
+  pt="${rest%%.*}"
+  pu="${rest#*.}"
+  d_title=$(b64d "$pt")
+  d_url=$(b64d "$pu")
+  if valid_url "$d_url"; then
+    browser=$(b64d "$pb")
+    title="$d_title"
+    url="$d_url"
+  fi
+fi
+if [[ -z "$url" && -n "${TABRELAY_URL:-}" ]] && valid_url "${TABRELAY_URL:-}"; then
+  browser="${TABRELAY_BROWSER:-}"
+  title="${TABRELAY_TITLE:-}"
+  url="${TABRELAY_URL:-}"
+fi
+if [[ -z "$url" ]]; then
+  for app in "${BROWSERS[@]}"; do
+    out=$(get_tab "$app")
+    [[ "$out" == *"$US"* ]] || continue
+    t=$(trim "${out%%"$US"*}")
+    u=$(trim "${out##*"$US"}")
+    if [[ -n "$u" ]]; then
+      browser="$app"; title="$t"; url="$u"
+      break
+    fi
+  done
+fi
 if [[ -z "$url" ]]; then
   echo "$L_NOTAB"
   exit 1
 fi
+if [[ -z "$title" ]]; then title="$url"; fi
 {
   echo "$L_PROMPT_HEAD"
   echo
