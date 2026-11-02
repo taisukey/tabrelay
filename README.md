@@ -25,6 +25,12 @@ A Japanese version is included as `TabRelay-JA.alfredworkflow`; the English one 
 
 Type `mc` in Alfred and the current Brave tab (title + URL) is ready to pass to Muse.
 
+## Icon variants
+
+<img src="assets/icon.png" width="64" alt="A: spark on coral"> <img src="assets/icon-b.png" width="64" alt="B: speech bubble"> <img src="assets/icon-c.png" width="64" alt="C: spark on charcoal">
+
+A (spark) is the default. All three icons are bundled in the package. To switch: in Alfred Preferences, right-click the TabRelay workflow and choose "Open in Finder", then rename `icon-b.png` (or `icon-c.png`) to `icon.png`, replacing the existing file.
+
 ## Install
 
 1. Download `TabRelay-EN.alfredworkflow` (or the JA file) from this repository's `dist/` folder or from Releases.

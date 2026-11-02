@@ -8,22 +8,22 @@
 	<string>Productivity</string>
 	<key>connections</key>
 	<dict>
-		<key>2831896B-6B27-4EB3-A2B6-E702957F4985</key>
+		<key>7345CE0E-D1B8-4829-8E08-0FBB00F36BF7</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>6C714727-894E-402E-9BFD-95113F944A5D</string>
+				<string>DE6468CF-8F98-48B8-ADC5-88065D01DBE7</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
 				<string></string>
 			</dict>
 		</array>
-		<key>6C714727-894E-402E-9BFD-95113F944A5D</key>
+		<key>BAE5DC9E-1633-4138-BCE3-103F17107563</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>24CE3D75-497E-4BC2-88C4-2EF154AC1A1E</string>
+				<string>7345CE0E-D1B8-4829-8E08-0FBB00F36BF7</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -138,7 +138,7 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.input.scriptfilter</string>
 			<key>uid</key>
-			<string>2831896B-6B27-4EB3-A2B6-E702957F4985</string>
+			<string>BAE5DC9E-1633-4138-BCE3-103F17107563</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -233,7 +233,7 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.action.script</string>
 			<key>uid</key>
-			<string>6C714727-894E-402E-9BFD-95113F944A5D</string>
+			<string>7345CE0E-D1B8-4829-8E08-0FBB00F36BF7</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -248,24 +248,24 @@ echo "$L_COPIED: $title"
 			<key>type</key>
 			<string>alfred.workflow.output.notification</string>
 			<key>uid</key>
-			<string>24CE3D75-497E-4BC2-88C4-2EF154AC1A1E</string>
+			<string>DE6468CF-8F98-48B8-ADC5-88065D01DBE7</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
 	</array>
 	<key>uidata</key>
 	<dict>
-		<key>24CE3D75-497E-4BC2-88C4-2EF154AC1A1E</key>
+		<key>7345CE0E-D1B8-4829-8E08-0FBB00F36BF7</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
-		<key>2831896B-6B27-4EB3-A2B6-E702957F4985</key>
+		<key>BAE5DC9E-1633-4138-BCE3-103F17107563</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>
 		</dict>
-		<key>6C714727-894E-402E-9BFD-95113F944A5D</key>
+		<key>DE6468CF-8F98-48B8-ADC5-88065D01DBE7</key>
 		<dict>
 			<key>ypos</key>
 			<integer>10</integer>

@@ -11,6 +11,8 @@ import zipfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 ICON = os.path.join(ROOT, "assets", "icon.png")
+ALT_ICONS = [("icon-b.png", os.path.join(ROOT, "assets", "icon-b.png")),
+             ("icon-c.png", os.path.join(ROOT, "assets", "icon-c.png"))]
 
 with open(os.path.join(ROOT, "src", "tabrelay"), encoding="utf-8") as f:
     body = f.read()
@@ -58,6 +60,9 @@ def make_workflow(lang, name, bundleid, description, f_title, f_sub, f_run, out_
         plistlib.dump(plist, fp)
     if os.path.exists(ICON):
         shutil.copy(ICON, os.path.join(wdir, "icon.png"))
+    for alt_name, alt_path in ALT_ICONS:
+        if os.path.exists(alt_path):
+            shutil.copy(alt_path, os.path.join(wdir, alt_name))
     os.makedirs(os.path.join(ROOT, "dist"), exist_ok=True)
     zpath = os.path.join(ROOT, "dist", out_name)
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:

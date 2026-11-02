@@ -23,6 +23,12 @@ English: [README.md](README.md)
 
 Alfred で `mc` と打つと、Brave の現在のタブ（タイトルと URL）が Muse へ渡せる状態で並びます。
 
+## アイコンのバリエーション
+
+<img src="assets/icon.png" width="64" alt="A: コーラルのスパーク"> <img src="assets/icon-b.png" width="64" alt="B: 吹き出し"> <img src="assets/icon-c.png" width="64" alt="C: 黒地のスパーク">
+
+既定は A（スパーク）です。3種類ともパッケージに同梱されています。切り替え方：Alfred の設定で TabRelay ワークフローを右クリック →「Open in Finder」で開き、`icon-b.png`（または `icon-c.png`）を `icon.png` にリネームして上書きしてください。
+
 ## インストール
 
 1. このリポジトリの `dist/` フォルダ、または Releases から `TabRelay-JA.alfredworkflow` をダウンロード
