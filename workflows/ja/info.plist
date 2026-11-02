@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>jp.taisukey.tabrelay.ja</string>
+	<key>category</key>
+	<string>Productivity</string>
+	<key>connections</key>
+	<dict>
+		<key>03E11AF8-60F8-428E-903A-4B273C9847B1</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>37D1A6DA-A810-4446-A735-944E2C8D5D28</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+		<key>37D1A6DA-A810-4446-A735-944E2C8D5D28</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>507F478B-99E1-4815-ADF0-A8ABAF06FC00</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>taisukey</string>
+	<key>description</key>
+	<string>Brave の現在のタブ（タイトルとURL）を Muse へ渡す</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>TabRelay</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<string>1</string>
+				<key>escaping</key>
+				<string>102</string>
+				<key>keyword</key>
+				<string>mc</string>
+				<key>runningsubtext</key>
+				<string>Brave を確認中…</string>
+				<key>script</key>
+				<string>TABRELAY_LANG=ja
+TABRELAY_MODE=--list
+# tabrelay — Brave の現在のタブ（タイトル / URL）を Muse へ渡す
+#              Pass the current Brave tab (title / URL) to Muse.
+# Copyright (c) 2026 taisukey. MIT License.
+#
+#   --list : Alfred Script Filter 用。副作用なし / for Alfred Script Filter, no side effects
+#   --send : 依頼文をコピーして Quick Chat を開く / copy the prompt and open Quick Chat
+#   --lang ja|en : 表示言語（環境変数 TABRELAY_LANG でも指定可、既定 ja）
+#   モードは環境変数 TABRELAY_MODE でも指定可（公開パッケージの埋め込み用）
+set -u
+
+mode="${TABRELAY_MODE:---send}"
+lang="${TABRELAY_LANG:-ja}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --list) mode="--list" ;;
+    --send) mode="--send" ;;
+    --lang) shift; lang="${1:-ja}" ;;
+  esac
+  shift
+done
+
+if [[ "$lang" == "en" ]]; then
+  L_NOTAB="No Brave tab found"
+  L_NOTAB_SUB="Open a page in Brave, then try again"
+  L_PROMPT_HEAD="Please take a look at this page."
+  L_TITLE="Title"
+  L_COPIED="Copied. Paste into Muse to send"
+else
+  L_NOTAB="Brave のタブが取得できませんでした"
+  L_NOTAB_SUB="Brave でページを開いてから実行してください"
+  L_PROMPT_HEAD="このページを見てください。"
+  L_TITLE="タイトル"
+  L_COPIED="コピーしました。貼り付けて送信してください"
+fi
+
+get_title() { osascript -e 'tell application "Brave Browser" to get title of active tab of front window' 2&gt;/dev/null; }
+get_url()   { osascript -e 'tell application "Brave Browser" to get URL of active tab of front window' 2&gt;/dev/null; }
+json_escape() { python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))'; }
+
+title=$(get_title)
+url=$(get_url)
+
+if [[ "$mode" == "--list" ]]; then
+  if [[ -z "$url" ]]; then
+    nt=$(printf '%s' "$L_NOTAB" | json_escape)
+    ns=$(printf '%s' "$L_NOTAB_SUB" | json_escape)
+    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' "$nt" "$ns"
+    exit 0
+  fi
+  t=$(printf '%s' "$title" | json_escape)
+  u=$(printf '%s' "$url" | json_escape)
+  printf '{"items":[{"title":%s,"subtitle":%s,"arg":%s,"valid":true}]}\n' "$t" "$u" "$u"
+  exit 0
+fi
+
+# --send
+if [[ -z "$url" ]]; then
+  echo "$L_NOTAB"
+  exit 1
+fi
+{
+  echo "$L_PROMPT_HEAD"
+  echo
+  echo "$L_TITLE: $title"
+  echo "URL: $url"
+} | pbcopy
+# Muse Quick Chat（Option+Space）を開く。アクセシビリティ許可が無い場合は静かに失敗する
+# Open Muse Quick Chat (Option+Space). Fails silently without the Accessibility permission.
+osascript -e 'tell application "System Events" to keystroke " " using {option down}' &gt;/dev/null 2&gt;&amp;1 || true
+echo "$L_COPIED: $title"
+</string>
+				<key>subtext</key>
+				<string>Brave の現在のタブを Muse へ渡す</string>
+				<key>title</key>
+				<string>Muse へ渡す</string>
+				<key>type</key>
+				<string>0</string>
+				<key>withspace</key>
+				<string>False</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>03E11AF8-60F8-428E-903A-4B273C9847B1</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<string>False</string>
+				<key>escaping</key>
+				<string>102</string>
+				<key>script</key>
+				<string>TABRELAY_LANG=ja
+TABRELAY_MODE=--send
+# tabrelay — Brave の現在のタブ（タイトル / URL）を Muse へ渡す
+#              Pass the current Brave tab (title / URL) to Muse.
+# Copyright (c) 2026 taisukey. MIT License.
+#
+#   --list : Alfred Script Filter 用。副作用なし / for Alfred Script Filter, no side effects
+#   --send : 依頼文をコピーして Quick Chat を開く / copy the prompt and open Quick Chat
+#   --lang ja|en : 表示言語（環境変数 TABRELAY_LANG でも指定可、既定 ja）
+#   モードは環境変数 TABRELAY_MODE でも指定可（公開パッケージの埋め込み用）
+set -u
+
+mode="${TABRELAY_MODE:---send}"
+lang="${TABRELAY_LANG:-ja}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --list) mode="--list" ;;
+    --send) mode="--send" ;;
+    --lang) shift; lang="${1:-ja}" ;;
+  esac
+  shift
+done
+
+if [[ "$lang" == "en" ]]; then
+  L_NOTAB="No Brave tab found"
+  L_NOTAB_SUB="Open a page in Brave, then try again"
+  L_PROMPT_HEAD="Please take a look at this page."
+  L_TITLE="Title"
+  L_COPIED="Copied. Paste into Muse to send"
+else
+  L_NOTAB="Brave のタブが取得できませんでした"
+  L_NOTAB_SUB="Brave でページを開いてから実行してください"
+  L_PROMPT_HEAD="このページを見てください。"
+  L_TITLE="タイトル"
+  L_COPIED="コピーしました。貼り付けて送信してください"
+fi
+
+get_title() { osascript -e 'tell application "Brave Browser" to get title of active tab of front window' 2&gt;/dev/null; }
+get_url()   { osascript -e 'tell application "Brave Browser" to get URL of active tab of front window' 2&gt;/dev/null; }
+json_escape() { python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))'; }
+
+title=$(get_title)
+url=$(get_url)
+
+if [[ "$mode" == "--list" ]]; then
+  if [[ -z "$url" ]]; then
+    nt=$(printf '%s' "$L_NOTAB" | json_escape)
+    ns=$(printf '%s' "$L_NOTAB_SUB" | json_escape)
+    printf '{"items":[{"title":%s,"subtitle":%s,"valid":false}]}\n' "$nt" "$ns"
+    exit 0
+  fi
+  t=$(printf '%s' "$title" | json_escape)
+  u=$(printf '%s' "$url" | json_escape)
+  printf '{"items":[{"title":%s,"subtitle":%s,"arg":%s,"valid":true}]}\n' "$t" "$u" "$u"
+  exit 0
+fi
+
+# --send
+if [[ -z "$url" ]]; then
+  echo "$L_NOTAB"
+  exit 1
+fi
+{
+  echo "$L_PROMPT_HEAD"
+  echo
+  echo "$L_TITLE: $title"
+  echo "URL: $url"
+} | pbcopy
+# Muse Quick Chat（Option+Space）を開く。アクセシビリティ許可が無い場合は静かに失敗する
+# Open Muse Quick Chat (Option+Space). Fails silently without the Accessibility permission.
+osascript -e 'tell application "System Events" to keystroke " " using {option down}' &gt;/dev/null 2&gt;&amp;1 || true
+echo "$L_COPIED: $title"
+</string>
+				<key>scriptargtype</key>
+				<string>0</string>
+				<key>scriptfile</key>
+				<string></string>
+				<key>type</key>
+				<string>0</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>37D1A6DA-A810-4446-A735-944E2C8D5D28</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>text</key>
+				<string></string>
+				<key>title</key>
+				<string>{query}</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.notification</string>
+			<key>uid</key>
+			<string>507F478B-99E1-4815-ADF0-A8ABAF06FC00</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>uidata</key>
+	<dict>
+		<key>03E11AF8-60F8-428E-903A-4B273C9847B1</key>
+		<dict>
+			<key>ypos</key>
+			<integer>10</integer>
+		</dict>
+		<key>37D1A6DA-A810-4446-A735-944E2C8D5D28</key>
+		<dict>
+			<key>ypos</key>
+			<integer>10</integer>
+		</dict>
+		<key>507F478B-99E1-4815-ADF0-A8ABAF06FC00</key>
+		<dict>
+			<key>ypos</key>
+			<integer>10</integer>
+		</dict>
+	</dict>
+	<key>version</key>
+	<string>0.1.0</string>
+</dict>
+</plist>
