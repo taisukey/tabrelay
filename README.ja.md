@@ -48,7 +48,19 @@ Alfred で `mc` と打つと、起動中の対応ブラウザの現在のタブ�
 
 ## 自動ペースト（任意設定）
 
-既定では、依頼文をコピーして Quick Chat を開くところまでで、貼り付け（⌘V）と送信は手作業です。貼り付けまで任せたい場合は、ワークフロー変数 `TABRELAY_AUTO_PASTE` を `1` にしてください（Alfred の設定で TabRelay ワークフローを選び、右上の変数ボタン [x] から値を変更します）。自動ペーストは Quick Chat を開いた後に ⌘V を代行送信する方式で、Alfred のアクセシビリティ許可と、Muse 側の Quick Chat ショートカット（Option+Space）が有効なことが前提です。貼り付けの成否は確認できないため、この場合は通知で Quick Chat の確認を促します。
+既定では、依頼文をコピーして Quick Chat を開くところまでで、貼り付け（⌘V）と送信は手作業です。
+
+**簡単な方法：キーワード `mca` を使ってください。** `mc` と同じ候補が出て、Enter で Quick Chat への貼り付けまで代行します。送信は手作業のままです。
+
+`mc` 自体を常に自動ペーストにしたい場合は、ワークフロー変数 `TABRELAY_AUTO_PASTE` を `1` にします。
+
+1. Alfred の設定 → **Workflows** → **TabRelay** を選択
+2. ワークフローエディタ **右上** の **[x]** ボタンをクリック
+3. Workflow Environment Variables で `TABRELAY_AUTO_PASTE` を `1` に変更
+
+![変数ボタンの場所](assets/alfred-variables.png)
+
+自動ペーストは Quick Chat を開いた後に ⌘V を代行送信する方式で、Alfred のアクセシビリティ許可と、Muse 側の Quick Chat ショートカット（Option+Space）が有効なことが前提です。貼り付けの成否は確認できないため、この場合は通知で Quick Chat の確認を促します。
 
 ## 仕組み
 

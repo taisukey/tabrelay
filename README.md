@@ -50,7 +50,19 @@ A (spark) is the default. All three icons are bundled in the package. To switch:
 
 ## Auto-paste (optional)
 
-By default, TabRelay copies the prompt and opens Quick Chat; you paste with ⌘V and send. If you would rather have it paste for you, set the workflow variable `TABRELAY_AUTO_PASTE` to `1`: in Alfred Preferences, select the TabRelay workflow, open its variables (the [x] button at the top right), and change the value. Auto-paste simulates ⌘V after opening Quick Chat, so it needs Alfred's Accessibility permission and Muse's Quick Chat shortcut (Option+Space) enabled. The paste cannot be verified, so in this mode the notification asks you to check Quick Chat before sending.
+By default, TabRelay copies the prompt and opens Quick Chat; you paste with ⌘V and send.
+
+**The easy way: use the `mca` keyword instead of `mc`.** It lists the same tabs, but pressing Enter also pastes the prompt into Quick Chat for you. Sending stays manual.
+
+If you want `mc` itself to always auto-paste, set the workflow variable `TABRELAY_AUTO_PASTE` to `1`:
+
+1. Open Alfred Preferences → **Workflows** → select **TabRelay**
+2. Click the **[x]** button in the **top right** of the workflow editor
+3. In the Workflow Environment Variables, set `TABRELAY_AUTO_PASTE` to `1`
+
+![Where the workflow variables button is](assets/alfred-variables.png)
+
+Auto-paste simulates ⌘V after opening Quick Chat, so it needs Alfred's Accessibility permission and Muse's Quick Chat shortcut (Option+Space) enabled. The paste cannot be verified, so in this mode the notification asks you to check Quick Chat before sending.
 
 ## How it works
 
