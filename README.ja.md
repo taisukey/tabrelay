@@ -72,6 +72,10 @@ Alfred で `mc` と打つと、起動中の対応ブラウザの現在のタブ�
 - [Alfred ヘルプ：ワークフローの変数](https://www.alfredapp.com/help/workflows/advanced/variables/) — `TABRELAY_AUTO_PASTE` のようなワークフロー変数の解説（英語）
 - [Awesome Alfred Workflows](https://github.com/alfred-workflows/awesome-alfred-workflows) — Alfred ワークフローのキュレーションリスト（英語）
 
+## クレジット
+
+taisukey と、Meta のパーソナル AI エージェント Muse との協働で設計・制作しました。
+
 ## ライセンス
 
 MIT — [LICENSE](LICENSE) をご覧ください。

@@ -74,6 +74,10 @@ A small zsh script (`src/tabrelay`) talks to each supported browser via AppleScr
 - [Alfred Help: Using Variables in Workflows](https://www.alfredapp.com/help/workflows/advanced/variables/) — background on workflow variables such as `TABRELAY_AUTO_PASTE`
 - [Awesome Alfred Workflows](https://github.com/alfred-workflows/awesome-alfred-workflows) — a curated list of Alfred workflows
 
+## Credits
+
+Designed and built by taisukey in collaboration with Muse, Meta's personal AI agent.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
