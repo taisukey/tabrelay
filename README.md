@@ -2,6 +2,10 @@
 
 <p align="center"><img src="assets/icon.png" width="120" alt="TabRelay icon"></p>
 
+<p align="center">
+  <a href="https://github.com/taisukey/tabrelay/blob/main/LICENSE"><img src="https://img.shields.io/github/license/taisukey/tabrelay" alt="License: MIT"></a>
+</p>
+
 **Hand the page you're reading to your Muse agent.**
 
 Pass the page you are reading in **Brave**, **Google Chrome** or **Chromium** to **Muse** (the Mac app) in two keystrokes.
